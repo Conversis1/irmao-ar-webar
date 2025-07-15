@@ -1,71 +1,85 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>IRMAO x Fluye WebAR</title>
+<head>
+  <meta charset="UTF-8">
+  <title>IRMAO x Fluye</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      background: url('assets/textura-agua.jpg') no-repeat center center fixed;
+      background-size: cover;
+      font-family: 'Montserrat', sans-serif;
+      color: #fff;
+    }
 
-    <!-- A-Frame -->
-    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    #loading-screen {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.8);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4em;
+      z-index: 10;
+      text-align: center;
+      padding: 20px;
+    }
 
-    <!-- MindAR core -->
-    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image.prod.js"></script>
+    #surfvideo {
+      width: 100%;
+      max-height: 80vh;
+      object-fit: cover;
+      z-index: 1;
+    }
 
-    <!-- MindAR A-Frame integration -->
-    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-aframe.prod.js"></script>
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
 
-    <style>
-      body { margin: 0; overflow: hidden; font-family: sans-serif; }
-      #intro-text {
-        position: absolute;
-        top: 48%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: 1.2em;
-        color: white;
-        background: rgba(0,0,0,0.5);
-        padding: 1em 1.4em;
-        border-radius: 10px;
-        text-align: center;
-        z-index: 9999;
-      }
-    </style>
-  </head>
+    #intro {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 1.5em;
+      font-family: 'Courier New', monospace;
+      animation: fadeIn 3s ease-in-out;
+      z-index: 20;
+    }
+  </style>
+</head>
+<body>
 
-  <body>
-    <div id="intro-text">Detectando esencia de movimiento…</div>
+  <div id="intro">
+    🌌 Fluye. La ola emocional está por comenzar.
+  </div>
 
-    <a-scene
-      mindar-image="imageTargetSrc: irmaoetiqueta1.mind; autoStart: true;"
-      vr-mode-ui="enabled: false"
-      device-orientation-permission-ui="enabled: true"
-      embedded
-    >
-      <a-assets>
-        <video id="surfvideo" autoplay loop playsinline src="assets/irmvideo.mp4"></video>
-      </a-assets>
+  <div id="loading-screen">
+    ✨ Sintonizando memorias líquidas… preparando el instante ✨
+  </div>
 
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+  <video id="surfvideo" autoplay loop controls playsinline>
+    <source src="assets/irmaoStream.m3u8" type="application/x-mpegURL">
+  </video>
 
-      <a-entity mindar-image-target="targetIndex: 0">
-        <a-video
-          src="#surfvideo"
-          width="1.6"
-          height="0.9"
-          position="0 0.1 0"
-          rotation="0 0 0"
-          material="opacity: 0"
-          animation__fadein="property: material.opacity; from: 0; to: 1; dur: 1200; easing: easeOutQuad; startEvents: targetFound"
-          animation__slideup="property: position; from: 0 -0.3 0; to: 0 0.1 0; dur: 1200; easing: easeOutQuad; startEvents: targetFound"
-        ></a-video>
-      </a-entity>
-    </a-scene>
+  <script>
+    setTimeout(() => {
+      document.getElementById('intro').style.display = 'none';
+    }, 4000);
 
-    <script>
-      document.addEventListener("targetFound", () => {
-        const intro = document.getElementById("intro-text");
-        if (intro) intro.style.display = "none";
-      });
-    </script>
-  </body>
+    const video = document.getElementById('surfvideo');
+    video.addEventListener('canplay', () => {
+      document.getElementById('loading-screen').style.display = 'none';
+    });
+  </script>
+
+</body>
 </html>
