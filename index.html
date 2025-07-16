@@ -99,6 +99,36 @@
       max-height: 60px;
       margin-bottom: 10px;
     }
+
+    #start {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      z-index: 50;
+      border: none;
+      background: transparent;
+    }
+
+    @media (max-width: 768px) {
+      #airplane, #banner-text {
+        width: 220px;
+        top: 35%;
+        animation-duration: 16s;
+      }
+      #banner-text {
+        font-size: 1em;
+      }
+      #irmao-banner {
+        font-size: 1em;
+        padding: 15px;
+      }
+      #irmao-banner img {
+        max-height: 50px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -106,6 +136,8 @@
   <div id="intro">
     🌌 Pacifica flies over. The emotional tide is rising.
   </div>
+
+  <button id="start"></button>
 
   <img id="airplane" src="assets/irmao-plane.png" alt="Vintage IRMAO Plane">
   <div id="banner-text">IRMAO flies slow</div>
@@ -115,7 +147,7 @@
     ✨ Tuning liquid memories… preparing the moment ✨
   </div>
 
-  <video id="surfvideo" autoplay loop controls playsinline>
+  <video id="surfvideo" loop controls playsinline>
     <source src="assets/irmaoStream.m3u8" type="application/x-mpegURL">
   </video>
 
@@ -126,34 +158,45 @@
 
   <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <script>
+    const video = document.getElementById('surfvideo');
+    const sound = document.getElementById('planeSound');
+    const startBtn = document.getElementById('start');
+
     setTimeout(() => {
       document.getElementById('intro').style.display = 'none';
     }, 4000);
 
-    const video = document.getElementById('surfvideo');
+    startBtn.addEventListener('click', () => {
+      startBtn.style.display = 'none';
+      video.muted = false;
+      video.play();
+
+      sound.play();
+      setTimeout(() => {
+        let fadeInterval = setInterval(() => {
+          if (sound.volume > 0.05) {
+            sound.volume -= 0.05;
+          } else {
+            sound.volume = 0;
+            clearInterval(fadeInterval);
+          }
+        }, 200);
+      }, 6000);
+    });
+
     if (Hls.isSupported()) {
       const hls = new Hls();
       hls.loadSource('assets/irmaoStream.m3u8');
       hls.attachMedia(video);
       hls.on(Hls.Events.MANIFEST_PARSED, function () {
-        video.muted = false;
-        video.play();
         document.getElementById('loading-screen').style.display = 'none';
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = 'assets/irmaoStream.m3u8';
       video.addEventListener('loadedmetadata', function () {
-        video.muted = false;
-        video.play();
         document.getElementById('loading-screen').style.display = 'none';
       });
     }
-
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        document.getElementById('planeSound').play();
-      }, 1000);
-    });
   </script>
 
 </body>
