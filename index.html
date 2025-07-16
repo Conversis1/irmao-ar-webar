@@ -3,8 +3,10 @@
   <head>
     <title>IRMAO AR Streaming</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- A-Frame & MindAR -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-aframe.prod.js"></script>
+    <!-- HLS.js -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
       body { margin: 0; overflow: hidden; }
@@ -36,15 +38,11 @@
         vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: true"
       >
-        <a-assets>
-          <video id="video" playsinline></video>
-        </a-assets>
-
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity mindar-image-target="targetIndex: 0">
           <a-video
-            src="#video"
+            id="video-plane"
             width="1.5"
             height="0.9"
             position="0 0 0"
@@ -57,21 +55,32 @@
     <script>
       const startButton = document.getElementById('start-button');
       const container = document.getElementById('container');
-      const video = document.getElementById('video');
 
       startButton.addEventListener('click', () => {
         startButton.style.display = 'none';
         container.style.display = 'block';
 
+        const video = document.createElement('video');
+        video.setAttribute('id', 'video');
+        video.setAttribute('playsinline', '');
+        video.setAttribute('crossorigin', 'anonymous');
+        video.setAttribute('autoplay', '');
+        video.setAttribute('controls', '');
+        video.style.display = 'none'; // oculto para que no interfiera visualmente
+        document.body.appendChild(video);
+
+        const videoPlane = document.querySelector('#video-plane');
+        videoPlane.setAttribute('src', '#video');
+
         if (Hls.isSupported()) {
           const hls = new Hls();
-          hls.loadSource('irmaoStream.m3u8');
+          hls.loadSource('assets/irmaoStream.m3u8');
           hls.attachMedia(video);
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
             video.play();
           });
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-          video.src = 'irmaoStream.m3u8';
+          video.src = 'assets/irmaoStream.m3u8';
           video.addEventListener('loadedmetadata', () => {
             video.play();
           });
