@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    
     <style>
         body, html {
             margin: 0;
@@ -16,6 +17,7 @@
             height: 100%;
             overflow: hidden;
             font-family: Arial, sans-serif;
+            background: #000;
         }
         #ar-container {
             position: fixed;
@@ -24,88 +26,187 @@
             top: 0;
             left: 0;
         }
-        #loading {
+        #status {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+            top: 20px;
+            left: 20px;
             color: white;
             background: rgba(0,0,0,0.7);
-            padding: 20px;
-            border-radius: 10px;
+            padding: 10px 20px;
+            border-radius: 20px;
             z-index: 1000;
+            font-size: 16px;
         }
-        #error {
+        #error-panel {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.9);
-            color: red;
-            padding: 20px;
+            background: rgba(0,0,0,0.95);
+            color: #ff5555;
+            padding: 30px;
             z-index: 1001;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        #error-panel h2 {
+            color: #ff3333;
+            margin-top: 0;
+        }
+        #error-panel ul {
+            padding-left: 20px;
+        }
+        #close-error {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #ff3333;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #start-button {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            font-size: 18px;
+            z-index: 1000;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div id="loading">Cargando experiencia AR...</div>
-    <div id="error"></div>
+    <div id="status">Preparando experiencia AR...</div>
+    <div id="error-panel">
+        <h2>Error al cargar AR</h2>
+        <div id="error-details"></div>
+        <button id="close-error">Cerrar</button>
+    </div>
+    
+    <button id="start-button" style="display:none;">Iniciar AR</button>
     
     <div id="ar-container">
         <a-scene 
-            mindar-image="imageTargetSrc: https://conversis1.github.io/irmao-ar-webar/assets/targets.mind; autoStart: true;" 
+            mindar-image="imageTargetSrc: targets.mind; autoStart: false;" 
             embedded 
             renderer="colorManagement: true;"
             loading-screen="enabled: false;"
         >
             <a-assets>
-                <!-- Precarga de assets (opcional pero recomendado) -->
-                <a-asset-item id="avion-3d" src="assets/avion.glb"></a-asset-item>
-                <audio id="sonido-propeller" src="assets/sonido.mp3" preload="auto"></audio>
+                <!-- Precarga de assets -->
+                <img id="target-image" src="irmaoetiqueta1.jpg" crossorigin="anonymous">
+                <audio id="sonido-propeller" src="plane-fx.mp3" preload="auto"></audio>
             </a-assets>
 
             <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-            <!-- Contenido AR (aparece al detectar el marcador) -->
+            <!-- Contenido AR -->
             <a-entity mindar-image-target="targetIndex: 0">
-                <a-entity 
-                    gltf-model="#avion-3d"
+                <a-image 
+                    src="irmao-plane.png"
                     position="0 0.5 0"
-                    scale="0.5 0.5 0.5"
-                    animation="property: position; to: 0 0.5 1; dur: 3000; loop: true; easing: linear"
-                >
-                    <!-- Efecto de partículas (estela) -->
-                    <a-entity 
-                        particle-system="preset: snow; particleCount: 100; color: #00FFFF; size: 0.1"
-                        position="0 0 -0.5"
-                    ></a-entity>
-                </a-entity>
-                <a-sound src="#sonido-propeller" autoplay="true" loop="true"></a-sound>
+                    width="1.5"
+                    height="0.7"
+                    animation="property: position; to: 0 0.8 0.5; dur: 3000; loop: true; easing: linear"
+                ></a-image>
+                <a-sound src="#sonido-propeller" autoplay="false" loop="true"></a-sound>
             </a-entity>
         </a-scene>
     </div>
 
     <script>
-        // Manejo de errores y carga
-        document.querySelector('a-scene').addEventListener('loaded', () => {
-            document.getElementById('loading').style.display = 'none';
+        // Elementos UI
+        const statusEl = document.getElementById('status');
+        const errorPanel = document.getElementById('error-panel');
+        const errorDetails = document.getElementById('error-details');
+        const startButton = document.getElementById('start-button');
+        const closeErrorBtn = document.getElementById('close-error');
+        const scene = document.querySelector('a-scene');
+        
+        // Manejo de errores mejorado
+        scene.addEventListener('error', (e) => {
+            let errorMessage = 'Error desconocido';
+            let errorDetails = 'No hay información adicional';
+            
+            if (e.detail) {
+                errorMessage = e.detail.message || 'Error sin mensaje';
+                errorDetails = `
+                    <p><strong>Tipo:</strong> ${e.detail.error || 'Desconocido'}</p>
+                    <p><strong>Detalles técnicos:</strong></p>
+                    <pre>${JSON.stringify(e.detail, null, 2)}</pre>
+                `;
+            }
+            
+            statusEl.textContent = 'Error en AR';
+            errorDetails.innerHTML = `
+                <p>${errorMessage}</p>
+                ${errorDetails}
+                <h3>Verifica:</h3>
+                <ul>
+                    <li>¿El archivo <strong>targets.mind</strong> existe en tu repositorio?</li>
+                    <li>¿Los permisos de cámara están activados?</li>
+                    <li>¿Tienes conexión a internet estable?</li>
+                </ul>
+                <p>Intenta recargar la página.</p>
+            `;
+            errorPanel.style.display = 'block';
+            
+            console.error('Error en MindAR:', e.detail || e);
         });
 
-        document.querySelector('a-scene').addEventListener('error', (e) => {
-            const errorEl = document.getElementById('error');
-            errorEl.style.display = 'block';
-            errorEl.innerHTML = `
-                <h2>Error al cargar AR</h2>
-                <p>${e.detail.message}</p>
-                <p>Verifica:</p>
-                <ul>
-                    <li>¿El archivo <strong>targets.mind</strong> existe en la carpeta assets?</li>
-                    <li>¿Los permisos de cámara están activados?</li>
-                </ul>
-                <p>Error técnico: ${e.detail.error}</p>
-            `;
+        // Cierre de panel de error
+        closeErrorBtn.addEventListener('click', () => {
+            errorPanel.style.display = 'none';
+        });
+
+        // Inicio manual de AR (para evitar problemas de autoplay)
+        startButton.addEventListener('click', () => {
+            statusEl.textContent = 'Iniciando cámara...';
+            startButton.style.display = 'none';
+            
+            try {
+                scene.system.start();
+                document.querySelector('#sonido-propeller').components.sound.playSound();
+                statusEl.textContent = 'Listo - Apunta a tu imagen target';
+            } catch (err) {
+                errorDetails.innerHTML = `Error al iniciar: ${err.message}`;
+                errorPanel.style.display = 'block';
+                startButton.style.display = 'block';
+            }
+        });
+
+        // Cuando la escena está lista
+        scene.addEventListener('loaded', () => {
+            statusEl.textContent = 'AR cargado - Toca para comenzar';
+            startButton.style.display = 'block';
+            
+            // Verificación de assets
+            const assets = scene.querySelectorAll('a-asset-item, img, audio');
+            assets.forEach(asset => {
+                if (!asset.hasAttribute('loaded')) {
+                    console.warn(`Asset no cargado: ${asset.id || asset.src}`);
+                }
+            });
+        });
+
+        // Detección de marcador
+        scene.addEventListener('targetFound', () => {
+            statusEl.textContent = 'Marcador detectado!';
+        });
+
+        scene.addEventListener('targetLost', () => {
+            statusEl.textContent = 'Apunta al marcador';
         });
     </script>
 </body>
