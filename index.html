@@ -2,107 +2,73 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>IRMAO AR Experience</title>
+    <title>IRMAO AR - Versión Estable</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
-    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background: #000;
-        }
-        #ar-container {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-        }
+        body { margin: 0; overflow: hidden; background: #000; }
         #status {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            color: white;
-            background: rgba(0,0,0,0.7);
-            padding: 10px 20px;
-            border-radius: 20px;
-            z-index: 1000;
+            position: fixed; top: 20px; left: 20px;
+            color: white; background: rgba(0,0,0,0.7);
+            padding: 10px 20px; border-radius: 20px;
+            z-index: 1000; font-family: Arial, sans-serif;
         }
-        #start-button {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 30px;
-            z-index: 1000;
+        #retry-button {
+            position: fixed; bottom: 30px; left: 50%;
+            transform: translateX(-50%); background: #FF5722;
+            color: white; border: none; padding: 15px 30px;
+            border-radius: 30px; z-index: 1000; display: none;
         }
     </style>
 </head>
 <body>
-    <div id="status">Esperando interacción...</div>
-    <button id="start-button">INICIAR EXPERIENCIA AR</button>
+    <div id="status">Preparando experiencia AR...</div>
+    <button id="retry-button">REINTENTAR</button>
     
-    <div id="ar-container">
-        <a-scene 
-            mindar-image="imageTargetSrc: assets/targets.mind; autoStart: false;"
-            embedded
-            renderer="colorManagement: true;"
-        >
-            <a-assets>
-                <audio id="propeller-sound" src="assets/plane-fx.mp3" preload="auto"></audio>
-            </a-assets>
-
-            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-            <a-entity mindar-image-target="targetIndex: 0">
-                <a-image
-                    src="assets/irmao-plane.png"
-                    position="0 0.5 0"
-                    width="1.5"
-                    height="0.7"
-                    animation="property: position; to: 0 0.8 0.5; dur: 3000; loop: true; easing: linear"
-                ></a-image>
-                <a-sound src="#propeller-sound" autoplay="false" loop="true"></a-sound>
-            </a-entity>
-        </a-scene>
-    </div>
+    <a-scene mindar-image="imageTargetSrc: assets/targets.mind" embedded vr-mode-ui="enabled: false">
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+        <a-entity mindar-image-target="targetIndex: 0">
+            <a-image src="assets/irmao-plane.png" position="0 0.5 0" width="1.5" height="0.7"></a-image>
+        </a-entity>
+    </a-scene>
 
     <script>
-        const startButton = document.getElementById('start-button');
-        const statusEl = document.getElementById('status');
         const scene = document.querySelector('a-scene');
-
-        // Controlador de inicio manual
-        startButton.addEventListener('click', () => {
+        const statusEl = document.getElementById('status');
+        const retryButton = document.getElementById('retry-button');
+        let retryCount = 0;
+        
+        // Versión mejorada del iniciador
+        function startAR() {
             statusEl.textContent = "Iniciando cámara...";
-            startButton.style.display = 'none';
             
             scene.system.start().then(() => {
                 statusEl.textContent = "Apunta a tu etiqueta IRMAO";
-                document.querySelector('#propeller-sound').components.sound.playSound();
+                retryButton.style.display = 'none';
             }).catch(err => {
-                statusEl.textContent = "Error: " + err.message;
-                startButton.style.display = 'block';
-                console.error(err);
+                retryCount++;
+                statusEl.textContent = `Error (${retryCount}/3): ${err.message}`;
+                retryButton.style.display = 'block';
+                console.error("Error AR:", err);
             });
+        }
+
+        // Sistema de reintento
+        retryButton.addEventListener('click', () => {
+            if(retryCount < 3) {
+                startAR();
+            } else {
+                statusEl.textContent = "Error persistente. Recarga la página.";
+            }
         });
 
-        // Detección de marcador
-        scene.addEventListener('targetFound', () => {
-            statusEl.textContent = "¡Marcador detectado!";
-        });
-
-        scene.addEventListener('targetLost', () => {
-            statusEl.textContent = "Apunta a tu etiqueta IRMAO";
-        });
+        // Inicio automático con timeout de seguridad
+        setTimeout(() => {
+            if(!scene.is('ar-mode')) {
+                startAR();
+            }
+        }, 1000);
     </script>
 </body>
 </html>
