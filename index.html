@@ -1,133 +1,81 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>IRMAO x Fluye</title>
+  <meta charset="utf-8">
+  <title>IRMAO WebAR</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- A-Frame y MindAR -->
+  <script src="https://cdn.jsdelivr.net/npm/aframe@1.2.0/dist/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.7/dist/mindar-image-aframe.prod.js"></script>
+  
   <style>
-    /* --- Tus estilos existentes --- */
-    body {
-      margin: 0;
-      background: url('assets/textura-agua.jpg') no-repeat center center fixed;
-      background-size: cover;
-      font-family: 'Montserrat', sans-serif;
-      color: #fff;
-      overflow: hidden;
-    }
-
-    #intro {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      font-size: 1.5em;
-      font-family: 'Courier New', monospace;
-      animation: fadeIn 3s ease-in-out;
+    body, html { margin:0; overflow:hidden; }
+    #airplane, #banner-text {
+      position: fixed;
       z-index: 20;
+      display: none;
+      animation: none;
+      pointer-events: none;
     }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    #airplane {
-      position: absolute;
-      top: 40%;
-      left: -300px;
-      width: 300px;
-      z-index: 30;
-      animation: none; /* ← no iniciar aún */
-    }
-
+    #airplane { top: 40%; left: -300px; width: 300px; }
     #banner-text {
-      position: absolute;
-      top: 47%;
-      left: -300px;
+      top: 47%; left: -300px;
       width: 300px;
       font-size: 1.2em;
       color: #fff;
       font-family: 'Courier New', monospace;
-      animation: none;
-      z-index: 29;
     }
-
     @keyframes flyAcross {
       0% { left: -300px; transform: rotate(-3deg); }
       50% { transform: rotate(0deg); }
       100% { left: 110%; transform: rotate(3deg); }
     }
-
-    #surfvideo {
-      width: 100%;
-      max-height: 80vh;
-      object-fit: cover;
-      display: none;
-      z-index: 1;
-    }
-
-    #tap-to-start {
-      position: absolute;
-      top: 40%;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(255,255,255,0.85);
-      color: #000;
-      padding: 15px 25px;
-      border-radius: 8px;
-      font-size: 1.2em;
-      z-index: 60;
-      animation: pulse 2s infinite;
-      cursor: pointer;
-    }
-
-    @keyframes pulse {
-      0% { opacity: 0.8; }
-      50% { opacity: 1; }
-      100% { opacity: 0.8; }
-    }
   </style>
 </head>
 <body>
-
-  <div id="intro">
-    🌌 Pacifica flies over. The emotional tide is rising.
-  </div>
-
-  <div id="tap-to-start">TAP TO START</div>
-
+  <!-- Overlays HTML -->
   <img id="airplane" src="assets/plane.png" alt="Airplane" />
   <div id="banner-text">The drift begins...</div>
 
-  <video id="surfvideo" src="assets/surf.mp4" preload="auto" playsinline></video>
-  <audio id="plane-sound" src="assets/plane-sound.mp3" preload="auto"></audio>
+  <!-- Escena AR -->
+  <a-scene mindar-image="imageTargetSrc: assets/targets.mind;" embedded
+           vr-mode-ui="enabled:false"
+           device-orientation-permission-ui="enabled:true">
+    <a-assets>
+      <video id="surfvideo" src="assets/surf.mp4" preload="auto" loop crossorigin="anonymous" playsinline></video>
+      <audio id="plane-audio" src="assets/plane-sound.mp3" preload="auto"></audio>
+    </a-assets>
+    <a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
+
+    <a-entity mindar-image-target="targetIndex: 0">
+      <a-video src="#surfvideo" width="1.5" height="0.84" position="0 0 0"></a-video>
+    </a-entity>
+  </a-scene>
 
   <script>
-    document.getElementById('tap-to-start').addEventListener('click', () => {
-      // Ocultar UI inicial
-      document.getElementById('tap-to-start').style.display = 'none';
-      document.getElementById('intro').style.display = 'none';
+    const scene = document.querySelector("a-scene");
+    const video = document.querySelector("#surfvideo");
+    const audio = document.querySelector("#plane-audio");
+    const airplane = document.querySelector("#airplane");
+    const banner = document.querySelector("#banner-text");
 
-      // Mostrar y reproducir video
-      const video = document.getElementById('surfvideo');
-      video.style.display = 'block';
-      video.play().catch(e => console.log("Error reproduciendo video:", e));
+    scene.addEventListener("targetFound", () => {
+      video.play().catch(e => console.log("Error al play video:", e));
+      audio.play().catch(e => console.log("Error al play audio:", e));
+      airplane.style.display = "block";
+      banner.style.display = "block";
+      airplane.style.animation = "flyAcross 12s ease-in-out forwards";
+      banner.style.animation = "flyAcross 12s ease-in-out forwards";
+    });
 
-      // Reproducir sonido del avión
-      const planeSound = document.getElementById('plane-sound');
-      planeSound.play().catch(e => console.log("Error reproduciendo audio:", e));
-
-      // Iniciar animaciones
-      const airplane = document.getElementById('airplane');
-      const banner = document.getElementById('banner-text');
-      airplane.style.animation = 'flyAcross 12s ease-in-out forwards';
-      banner.style.animation = 'flyAcross 12s ease-in-out forwards';
+    scene.addEventListener("targetLost", () => {
+      video.pause();
+      audio.pause();
+      airplane.style.display = "none";
+      banner.style.display = "none";
+      airplane.style.animation = "none";
+      banner.style.animation = "none";
     });
   </script>
-
 </body>
 </html>
