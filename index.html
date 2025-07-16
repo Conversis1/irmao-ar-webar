@@ -2,7 +2,7 @@
 <html>
   <head>
     <title>IRMAO AR Streaming</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <!-- A-Frame & MindAR -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-aframe.prod.js"></script>
@@ -27,50 +27,88 @@
     </style>
   </head>
   <body>
+    <!-- Start Button -->
     <button id="start-button">Iniciar experiencia</button>
 
+    <!-- Hidden Video Element -->
+    <video id="video" playsinline crossorigin="anonymous" webkit-playsinline muted style="display: none"></video>
+
+    <!-- Plane Sound -->
+    <audio id="plane-sound" src="assets/plane-fx.mp3"></audio>
+
+    <!-- AR Scene -->
     <div id="container" style="width: 100vw; height: 100vh; display: none;">
       <a-scene
-        mindar-image="imageTargetSrc: assets/targets.mind;"
+        mindar-image="imageTargetSrc: assets/irmaoetiqueta1.mind;"
         embedded
         color-space="sRGB"
         renderer="colorManagement: true; physicallyCorrectLights"
         vr-mode-ui="enabled: false"
         device-orientation-permission-ui="enabled: true"
       >
+        <a-assets>
+          <img id="plane-img" src="assets/irmao-plane.png" />
+        </a-assets>
+
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity mindar-image-target="targetIndex: 0">
+          <!-- Streaming Video -->
           <a-video
             id="video-plane"
+            src="#video"
             width="1.5"
             height="0.9"
             position="0 0 0"
             rotation="0 0 0"
           ></a-video>
+
+          <!-- Animated Plane -->
+          <a-image
+            id="plane"
+            src="#plane-img"
+            position="-1 0.3 0"
+            scale="0.6 0.3 1"
+            rotation="0 0 0"
+            visible="false"
+          >
+            <!-- Rotating Animation (fake propeller) -->
+            <a-animation
+              attribute="rotation"
+              to="0 360 0"
+              dur="1500"
+              repeat="indefinite"
+              easing="linear"
+            ></a-animation>
+
+            <!-- Flight Animation -->
+            <a-animation
+              id="plane-fly"
+              attribute="position"
+              from="-1 0.3 0"
+              to="1 0.3 0"
+              dur="6000"
+              easing="linear"
+              begin="startPlane"
+            ></a-animation>
+          </a-image>
         </a-entity>
       </a-scene>
     </div>
 
+    <!-- Script Logic -->
     <script>
       const startButton = document.getElementById('start-button');
       const container = document.getElementById('container');
+      const video = document.getElementById('video');
+      const audio = document.getElementById('plane-sound');
+      const plane = document.getElementById('plane');
 
       startButton.addEventListener('click', () => {
         startButton.style.display = 'none';
         container.style.display = 'block';
 
-        const video = document.createElement('video');
-        video.setAttribute('id', 'video');
-        video.setAttribute('playsinline', '');
-        video.setAttribute('crossorigin', 'anonymous');
-        video.setAttribute('autoplay', '');
-        video.setAttribute('controls', '');
-        video.style.display = 'none';
-        document.body.appendChild(video);
-
-        const videoPlane = document.querySelector('#video-plane');
-
+        // Start HLS video
         if (Hls.isSupported()) {
           const hls = new Hls();
           hls.loadSource('assets/irmaoStream.m3u8');
@@ -85,8 +123,13 @@
           });
         }
 
-        video.addEventListener('canplay', () => {
-          videoPlane.setAttribute('src', '#video');
+        // Trigger plane when tag is found
+        const sceneEl = document.querySelector('a-scene');
+        sceneEl.addEventListener('targetFound', () => {
+          console.log('🎯 Target found!');
+          plane.setAttribute('visible', 'true');
+          plane.emit('startPlane');
+          audio.play();
         });
       });
     </script>
