@@ -1,48 +1,81 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>IRMAO x Fluye WebAR</title>
-    <!-- A-Frame -->
+    <title>IRMAO AR Streaming</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <!-- MindAR core -->
-    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image.prod.js"></script>
-    <!-- MindAR A-Frame integration -->
-    <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.1.4/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.4/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
       body { margin: 0; overflow: hidden; }
-      video { display: none; }
+      #start-button {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 1em 2em;
+        font-size: 1.2em;
+        background-color: #000;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        z-index: 10;
+        cursor: pointer;
+      }
     </style>
   </head>
   <body>
-    <a-scene
-      mindar-image="imageTargetSrc: ./irmao.mind;"
-      embedded
-      color-space="sRGB"
-      renderer="colorManagement: true; physicallyCorrectLights"
-      vr-mode-ui="enabled: false"
-      device-orientation-permission-ui="enabled: true"
-    >
-      <a-assets>
-        <video id="surfvideo" src="irmao.mp4" playsinline></video>
-      </a-assets>
+    <button id="start-button">Iniciar experiencia</button>
 
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    <div id="container" style="width: 100vw; height: 100vh; display: none;">
+      <a-scene
+        mindar-image="imageTargetSrc: ./irmao.mind;"
+        embedded
+        color-space="sRGB"
+        renderer="colorManagement: true; physicallyCorrectLights"
+        vr-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: true"
+      >
+        <a-assets>
+          <video id="video" playsinline></video>
+        </a-assets>
 
-      <a-entity mindar-image-target="targetIndex: 0">
-        <a-video
-          src="#surfvideo"
-          width="1.5"
-          height="0.85"
-          position="0 0 0"
-          rotation="0 0 0"
-        ></a-video>
-      </a-entity>
-    </a-scene>
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <a-entity mindar-image-target="targetIndex: 0">
+          <a-video
+            src="#video"
+            width="1.5"
+            height="0.9"
+            position="0 0 0"
+            rotation="0 0 0"
+          ></a-video>
+        </a-entity>
+      </a-scene>
+    </div>
 
     <script>
-      window.addEventListener('click', () => {
-        const video = document.querySelector('#surfvideo');
-        video.play();
+      const startButton = document.getElementById('start-button');
+      const container = document.getElementById('container');
+      const video = document.getElementById('video');
+
+      startButton.addEventListener('click', () => {
+        startButton.style.display = 'none';
+        container.style.display = 'block';
+
+        if (Hls.isSupported()) {
+          const hls = new Hls();
+          hls.loadSource('irmaoStream.m3u8');
+          hls.attachMedia(video);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            video.play();
+          });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = 'irmaoStream.m3u8';
+          video.addEventListener('loadedmetadata', () => {
+            video.play();
+          });
+        }
       });
     </script>
   </body>
