@@ -66,15 +66,12 @@
         video.setAttribute('crossorigin', 'anonymous');
         video.setAttribute('autoplay', '');
         video.setAttribute('controls', '');
-        video.style.display = 'none'; // oculto para que no interfiera visualmente
+        video.style.display = 'none';
         document.body.appendChild(video);
-
-        const videoPlane = document.querySelector('#video-plane');
-        videoPlane.setAttribute('src', '#video');
 
         if (Hls.isSupported()) {
           const hls = new Hls();
-          hls.loadSource('assets/irmaoStream.m3u8');
+          hls.loadSource('assets/irmaoStream.m3u8'); // Cambia a 'assets/sample/irmaoSample.m3u8' si quieres probar primero
           hls.attachMedia(video);
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
             video.play();
@@ -85,6 +82,12 @@
             video.play();
           });
         }
+
+        // Esperar a que el video esté listo antes de asignarlo al plano
+        const videoPlane = document.querySelector('#video-plane');
+        video.addEventListener('canplay', () => {
+          videoPlane.setAttribute('src', '#video');
+        });
       });
     </script>
   </body>
