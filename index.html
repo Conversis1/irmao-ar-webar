@@ -1,48 +1,42 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Avión IRMAO AR</title>
-    <meta charset="UTF-8" />
-    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/2.1.8/aframe/build/aframe-ar.min.js"></script>
-  </head>
-  <body style="margin: 0; overflow: hidden;">
-    <a-scene embedded arjs>
-      <!-- Marcador hiro (puedes cambiarlo si usas uno personalizado) -->
-      <a-marker preset="hiro" id="marker">
+<head>
+    <meta charset="utf-8">
+    <title>AR Móvil - Reconocimiento de Imagen</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe@1.3.0/dist/aframe.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #ar-container { width: 100%; height: 100vh; position: fixed; top: 0; left: 0; }
+    </style>
+</head>
+<body>
+    <div id="ar-container">
+        <a-scene mindar-image="imageTargetSrc: assets/target.mind;" embedded>
+            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+            
+            <!-- Avión 3D que aparece al detectar la imagen -->
+            <a-entity mindar-image-target="targetIndex: 0">
+                <a-entity 
+                    gltf-model="assets/avion.glb" 
+                    position="0 0 0.5" 
+                    scale="0.5 0.5 0.5"
+                    animation="property: position; to: 0 0.5 1; dur: 3000; loop: true; easing: linear">
+                </a-entity>
+                <!-- Efecto de sonido -->
+                <a-sound src="assets/sonido-propeller.mp3" autoplay="true" loop="true"></a-sound>
+            </a-entity>
+        </a-scene>
+    </div>
 
-        <!-- Imagen del avión simulando vuelo -->
-        <a-image
-          id="avion"
-          src="irmao-plane.png"
-          position="-2 1 -2"
-          rotation="0 0 0"
-          width="1.5"
-          height="0.7"
-          animation="property: position; to: 2 1 -4; dur: 4000; loop: true; easing: linear"
-        ></a-image>
-
-        <!-- Sonido del motor (propeller) -->
-        <a-sound id="propeller" src="sonido.mp3" autoplay="false" loop="true" position="0 2 0"></a-sound>
-
-      </a-marker>
-
-      <!-- Cámara -->
-      <a-entity camera></a-entity>
-    </a-scene>
-
-    <!-- Activar sonido al detectar el marcador -->
     <script>
-      const marker = document.querySelector('#marker');
-      const sonido = document.querySelector('#propeller');
-
-      marker.addEventListener('markerFound', () => {
-        sonido.components.sound.playSound();
-      });
-
-      marker.addEventListener('markerLost', () => {
-        sonido.components.sound.stopSound();
-      });
+        // Activar AR al cargar la página (opcional)
+        window.addEventListener('load', () => {
+            const scene = document.querySelector('a-scene');
+            if (scene.hasLoaded) scene.system.start();
+        });
     </script>
-  </body>
+</body>
 </html>
