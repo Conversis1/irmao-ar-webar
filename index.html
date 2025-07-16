@@ -2,17 +2,17 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>IRMAO AR - Versión Funcional</title>
+    <title>IRMAO AR - Versión Estable</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
     <style>
-        body { 
-            margin: 0; 
-            padding: 0; 
-            width: 100vw; 
-            height: 100vh; 
-            overflow: hidden; 
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
             background: #000;
             touch-action: none;
         }
@@ -20,8 +20,6 @@
             position: fixed;
             width: 100%;
             height: 100%;
-            top: 0;
-            left: 0;
         }
         #status {
             position: fixed;
@@ -34,84 +32,106 @@
             z-index: 1000;
             font-family: Arial, sans-serif;
         }
+        #start-button {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 30px;
+            z-index: 1000;
+            font-size: 18px;
+        }
     </style>
 </head>
 <body>
-    <div id="status">Preparando AR...</div>
+    <div id="status">Presiona el botón para iniciar</div>
+    <button id="start-button">INICIAR AR</button>
     
-    <div id="ar-container">
-        <a-scene 
-            mindar-image="imageTargetSrc: assets/targets.mind; uiScanning: no; uiLoading: no;"
-            embedded
-            vr-mode-ui="enabled: false"
-            renderer="precision: mediump; antialias: true;"
-        >
-            <a-camera 
-                position="0 0 0" 
-                look-controls="enabled: false"
-                wasd-controls="enabled: false"
-            ></a-camera>
-            
-            <a-assets>
-                <audio id="sound" src="assets/plane-fx.mp3" preload="auto"></audio>
-            </a-assets>
+    <a-scene 
+        mindar-image="imageTargetSrc: https://conversis1.github.io/irmao-ar-webar/assets/targets.mind; autoStart: false;"
+        embedded
+        vr-mode-ui="enabled: false"
+        loading-screen="enabled: false"
+    >
+        <a-assets>
+            <audio id="sound" src="https://conversis1.github.io/irmao-ar-webar/assets/plane-fx.mp3" preload="auto"></audio>
+        </a-assets>
 
-            <a-entity mindar-image-target="targetIndex: 0">
-                <a-image
-                    src="assets/irmao-plane.png"
-                    position="0 0.5 0"
-                    width="1.5"
-                    height="0.7"
-                    animation="property: position; to: 0 0.8 0.5; dur: 3000; loop: true"
-                ></a-image>
-                <a-sound src="#sound" autoplay="true" loop="true"></a-sound>
-            </a-entity>
-        </a-scene>
-    </div>
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+        <a-entity mindar-image-target="targetIndex: 0">
+            <a-image
+                src="https://conversis1.github.io/irmao-ar-webar/assets/irmao-plane.png"
+                position="0 0.5 0"
+                width="1.5"
+                height="0.7"
+                animation="property: position; to: 0 0.8 0.5; dur: 3000; loop: true"
+            ></a-image>
+            <a-sound src="#sound" autoplay="false" loop="true"></a-sound>
+        </a-entity>
+    </a-scene>
 
     <script>
         const scene = document.querySelector('a-scene');
         const statusEl = document.getElementById('status');
-        
-        // Detector de compatibilidad
-        function checkCompatibility() {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                statusEl.innerHTML = "ERROR: Tu navegador no soporta AR.<br>Usa Chrome o Firefox en Android.";
-                return false;
-            }
-            return true;
-        }
+        const startButton = document.getElementById('start-button');
+        let arStarted = false;
 
-        // Iniciador mejorado
-        function startAR() {
-            if (!checkCompatibility()) return;
+        // Control de inicio manual
+        startButton.addEventListener('click', async () => {
+            if (arStarted) return;
             
-            statusEl.textContent = "Solicitando cámara...";
+            statusEl.textContent = "Solicitando permisos...";
+            startButton.disabled = true;
             
-            // Paso 1: Verificar permisos primero
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(() => {
-                    // Paso 2: Iniciar MindAR después de tener permisos
-                    statusEl.textContent = "Iniciando AR...";
-                    scene.system.start().then(() => {
-                        statusEl.textContent = "Apunta a tu etiqueta IRMAO";
-                    }).catch(err => {
-                        statusEl.innerHTML = `Error AR:<br>${err.message}`;
-                        console.error("MindAR error:", err);
-                    });
-                })
-                .catch(err => {
-                    statusEl.innerHTML = `Permiso denegado:<br>${err.message}`;
-                    console.error("Camera error:", err);
+            try {
+                // Primero solicitamos permisos de cámara explícitamente
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                
+                // Detenemos el stream inmediatamente (solo necesitamos el permiso)
+                stream.getTracks().forEach(track => track.stop());
+                
+                statusEl.textContent = "Iniciando AR...";
+                
+                // Iniciamos MindAR después de obtener permisos
+                await scene.system.start();
+                arStarted = true;
+                startButton.style.display = 'none';
+                statusEl.textContent = "Apunta a tu etiqueta IRMAO";
+                
+                // Iniciamos el sonido
+                document.querySelector('#sound').components.sound.playSound();
+                
+            } catch (error) {
+                console.error("Error:", error);
+                statusEl.innerHTML = `Error: ${error.message}<br>Recarga la página e intenta nuevamente`;
+                startButton.disabled = false;
+                
+                if (error.name === 'NotAllowedError') {
+                    statusEl.innerHTML = "Permiso de cámara denegado<br>Por favor habilita los permisos y recarga";
+                }
+            }
+        });
+
+        // Verificación de assets
+        window.addEventListener('load', () => {
+            const assets = [
+                'https://conversis1.github.io/irmao-ar-webar/assets/targets.mind',
+                'https://conversis1.github.io/irmao-ar-webar/assets/irmao-plane.png',
+                'https://conversis1.github.io/irmao-ar-webar/assets/plane-fx.mp3'
+            ];
+            
+            assets.forEach(asset => {
+                fetch(asset).catch(err => {
+                    console.error(`Error cargando ${asset}:`, err);
+                    statusEl.innerHTML = `Error: No se pudo cargar ${asset.split('/').pop()}`;
                 });
-        }
-
-        // Inicio seguro con timeout
-        setTimeout(() => {
-            if (!scene.is('ar-mode')) {
-                startAR();
-            }
-        }, 500);
+            });
+        });
     </script>
 </body>
 </html>
