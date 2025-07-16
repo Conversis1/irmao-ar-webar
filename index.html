@@ -2,135 +2,196 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>IRMAO AR - Versión Estable</title>
+    <title>IRMAO AR - Versión Final</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image.prod.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
+        /* Reset completo para body y html */
+        html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            overflow: hidden !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Contenedor principal */
+        #ar-root {
+            position: absolute;
             width: 100%;
             height: 100%;
-            overflow: hidden;
-            background: #000;
-            touch-action: none;
+            z-index: 0;
         }
-        #ar-container {
+        
+        /* UI de control */
+        #ar-ui {
             position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
+            pointer-events: none;
+            z-index: 1000;
         }
+        
         #status {
-            position: fixed;
+            position: absolute;
             top: 20px;
             left: 20px;
             color: white;
             background: rgba(0,0,0,0.7);
-            padding: 10px 20px;
-            border-radius: 20px;
-            z-index: 1000;
+            padding: 12px 24px;
+            border-radius: 24px;
             font-family: Arial, sans-serif;
+            font-size: 16px;
+            pointer-events: auto;
         }
+        
         #start-button {
-            position: fixed;
+            position: absolute;
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
             background: #4CAF50;
             color: white;
             border: none;
-            padding: 15px 30px;
-            border-radius: 30px;
-            z-index: 1000;
+            padding: 16px 32px;
+            border-radius: 32px;
             font-size: 18px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            pointer-events: auto;
         }
     </style>
 </head>
 <body>
-    <div id="status">Presiona el botón para iniciar</div>
-    <button id="start-button">INICIAR AR</button>
+    <!-- Contenedor raíz para AR -->
+    <div id="ar-root">
+        <a-scene embedded vr-mode-ui="enabled: false">
+            <!-- La escena AR se cargará aquí -->
+        </a-scene>
+    </div>
     
-    <a-scene 
-        mindar-image="imageTargetSrc: https://conversis1.github.io/irmao-ar-webar/assets/targets.mind; autoStart: false;"
-        embedded
-        vr-mode-ui="enabled: false"
-        loading-screen="enabled: false"
-    >
-        <a-assets>
-            <audio id="sound" src="https://conversis1.github.io/irmao-ar-webar/assets/plane-fx.mp3" preload="auto"></audio>
-        </a-assets>
+    <!-- Interfaz de usuario -->
+    <div id="ar-ui">
+        <div id="status">Preparado</div>
+        <button id="start-button">INICIAR EXPERIENCIA AR</button>
+    </div>
 
-        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-        <a-entity mindar-image-target="targetIndex: 0">
-            <a-image
-                src="https://conversis1.github.io/irmao-ar-webar/assets/irmao-plane.png"
-                position="0 0.5 0"
-                width="1.5"
-                height="0.7"
-                animation="property: position; to: 0 0.8 0.5; dur: 3000; loop: true"
-            ></a-image>
-            <a-sound src="#sound" autoplay="false" loop="true"></a-sound>
-        </a-entity>
-    </a-scene>
-
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    
     <script>
+        // Configuración inicial
         const scene = document.querySelector('a-scene');
         const statusEl = document.getElementById('status');
         const startButton = document.getElementById('start-button');
-        let arStarted = false;
-
-        // Control de inicio manual
+        
+        // 1. Verificar compatibilidad
+        function checkCompatibility() {
+            const requiredFeatures = [
+                'WebGL',
+                'WebAssembly',
+                'MediaDevices',
+                'getUserMedia'
+            ];
+            
+            const missing = requiredFeatures.filter(f => !window[f]);
+            
+            if (missing.length > 0) {
+                statusEl.innerHTML = `Tu navegador no soporta:<br>${missing.join(', ')}`;
+                startButton.disabled = true;
+                return false;
+            }
+            return true;
+        }
+        
+        // 2. Inicializar AR
+        async function initializeAR() {
+            if (!checkCompatibility()) return;
+            
+            // Configurar escena AR
+            scene.setAttribute('mindar-image', {
+                imageTargetSrc: 'https://conversis1.github.io/irmao-ar-webar/assets/targets.mind',
+                autoStart: false,
+                maxTrack: 1,
+                uiLoading: 'no',
+                uiScanning: 'no'
+            });
+            
+            // Añadir contenido AR
+            const assets = `
+                <a-assets>
+                    <audio id="sound" src="https://conversis1.github.io/irmao-ar-webar/assets/plane-fx.mp3" preload="auto"></audio>
+                    <img id="target" src="https://conversis1.github.io/irmao-ar-webar/assets/irmao-plane.png">
+                </a-assets>
+                <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+                <a-entity mindar-image-target="targetIndex: 0">
+                    <a-image src="#target" position="0 0.5 0" width="1.5" height="0.7"
+                        animation="property: position; to: 0 0.8 0.5; dur: 3000; loop: true"></a-image>
+                    <a-sound src="#sound" autoplay="false" loop="true"></a-sound>
+                </a-entity>
+            `;
+            
+            scene.innerHTML = assets;
+            statusEl.textContent = "Sistema listo";
+        }
+        
+        // 3. Controlador de inicio
         startButton.addEventListener('click', async () => {
-            if (arStarted) return;
-            
-            statusEl.textContent = "Solicitando permisos...";
-            startButton.disabled = true;
-            
             try {
-                // Primero solicitamos permisos de cámara explícitamente
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                statusEl.textContent = "Verificando cámara...";
                 
-                // Detenemos el stream inmediatamente (solo necesitamos el permiso)
+                // Primero verificar acceso a cámara
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                });
+                
+                // Liberar stream inmediatamente
                 stream.getTracks().forEach(track => track.stop());
                 
                 statusEl.textContent = "Iniciando AR...";
+                startButton.disabled = true;
                 
-                // Iniciamos MindAR después de obtener permisos
-                await scene.system.start();
-                arStarted = true;
-                startButton.style.display = 'none';
-                statusEl.textContent = "Apunta a tu etiqueta IRMAO";
+                // Iniciar MindAR con retraso para evitar condiciones de carrera
+                await new Promise(resolve => setTimeout(resolve, 300));
                 
-                // Iniciamos el sonido
+                const mindarSystem = scene.systems['mindar-image-system'];
+                await mindarSystem.start();
+                
+                // Reproducir sonido
                 document.querySelector('#sound').components.sound.playSound();
                 
+                // Ocultar UI
+                document.getElementById('ar-ui').style.display = 'none';
+                
             } catch (error) {
-                console.error("Error:", error);
-                statusEl.innerHTML = `Error: ${error.message}<br>Recarga la página e intenta nuevamente`;
+                console.error("Error al iniciar AR:", error);
                 startButton.disabled = false;
                 
                 if (error.name === 'NotAllowedError') {
-                    statusEl.innerHTML = "Permiso de cámara denegado<br>Por favor habilita los permisos y recarga";
+                    statusEl.innerHTML = "Permiso de cámara denegado<br>Por favor habilita los permisos";
+                } else if (error.name === 'NotFoundError') {
+                    statusEl.innerHTML = "No se encontró cámara trasera<br>Usa un dispositivo con cámara trasera";
+                } else {
+                    statusEl.innerHTML = `Error técnico:<br>${error.message}`;
                 }
             }
         });
-
-        // Verificación de assets
-        window.addEventListener('load', () => {
-            const assets = [
-                'https://conversis1.github.io/irmao-ar-webar/assets/targets.mind',
-                'https://conversis1.github.io/irmao-ar-webar/assets/irmao-plane.png',
-                'https://conversis1.github.io/irmao-ar-webar/assets/plane-fx.mp3'
-            ];
-            
-            assets.forEach(asset => {
-                fetch(asset).catch(err => {
-                    console.error(`Error cargando ${asset}:`, err);
-                    statusEl.innerHTML = `Error: No se pudo cargar ${asset.split('/').pop()}`;
-                });
-            });
+        
+        // Inicializar al cargar
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeAR();
         });
     </script>
 </body>
