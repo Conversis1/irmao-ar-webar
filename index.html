@@ -1,81 +1,48 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <title>IRMAO WebAR</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- A-Frame y MindAR -->
-  <script src="https://cdn.jsdelivr.net/npm/aframe@1.2.0/dist/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.1.7/dist/mindar-image-aframe.prod.js"></script>
-  
-  <style>
-    body, html { margin:0; overflow:hidden; }
-    #airplane, #banner-text {
-      position: fixed;
-      z-index: 20;
-      display: none;
-      animation: none;
-      pointer-events: none;
-    }
-    #airplane { top: 40%; left: -300px; width: 300px; }
-    #banner-text {
-      top: 47%; left: -300px;
-      width: 300px;
-      font-size: 1.2em;
-      color: #fff;
-      font-family: 'Courier New', monospace;
-    }
-    @keyframes flyAcross {
-      0% { left: -300px; transform: rotate(-3deg); }
-      50% { transform: rotate(0deg); }
-      100% { left: 110%; transform: rotate(3deg); }
-    }
-  </style>
-</head>
-<body>
-  <!-- Overlays HTML -->
-  <img id="airplane" src="assets/plane.png" alt="Airplane" />
-  <div id="banner-text">The drift begins...</div>
+<html>
+  <head>
+    <title>Avión IRMAO AR</title>
+    <meta charset="UTF-8" />
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/2.1.8/aframe/build/aframe-ar.min.js"></script>
+  </head>
+  <body style="margin: 0; overflow: hidden;">
+    <a-scene embedded arjs>
+      <!-- Marcador hiro (puedes cambiarlo si usas uno personalizado) -->
+      <a-marker preset="hiro" id="marker">
 
-  <!-- Escena AR -->
-  <a-scene mindar-image="imageTargetSrc: assets/targets.mind;" embedded
-           vr-mode-ui="enabled:false"
-           device-orientation-permission-ui="enabled:true">
-    <a-assets>
-      <video id="surfvideo" src="assets/surf.mp4" preload="auto" loop crossorigin="anonymous" playsinline></video>
-      <audio id="plane-audio" src="assets/plane-sound.mp3" preload="auto"></audio>
-    </a-assets>
-    <a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
+        <!-- Imagen del avión simulando vuelo -->
+        <a-image
+          id="avion"
+          src="irmao-plane.png"
+          position="-2 1 -2"
+          rotation="0 0 0"
+          width="1.5"
+          height="0.7"
+          animation="property: position; to: 2 1 -4; dur: 4000; loop: true; easing: linear"
+        ></a-image>
 
-    <a-entity mindar-image-target="targetIndex: 0">
-      <a-video src="#surfvideo" width="1.5" height="0.84" position="0 0 0"></a-video>
-    </a-entity>
-  </a-scene>
+        <!-- Sonido del motor (propeller) -->
+        <a-sound id="propeller" src="sonido.mp3" autoplay="false" loop="true" position="0 2 0"></a-sound>
 
-  <script>
-    const scene = document.querySelector("a-scene");
-    const video = document.querySelector("#surfvideo");
-    const audio = document.querySelector("#plane-audio");
-    const airplane = document.querySelector("#airplane");
-    const banner = document.querySelector("#banner-text");
+      </a-marker>
 
-    scene.addEventListener("targetFound", () => {
-      video.play().catch(e => console.log("Error al play video:", e));
-      audio.play().catch(e => console.log("Error al play audio:", e));
-      airplane.style.display = "block";
-      banner.style.display = "block";
-      airplane.style.animation = "flyAcross 12s ease-in-out forwards";
-      banner.style.animation = "flyAcross 12s ease-in-out forwards";
-    });
+      <!-- Cámara -->
+      <a-entity camera></a-entity>
+    </a-scene>
 
-    scene.addEventListener("targetLost", () => {
-      video.pause();
-      audio.pause();
-      airplane.style.display = "none";
-      banner.style.display = "none";
-      airplane.style.animation = "none";
-      banner.style.animation = "none";
-    });
-  </script>
-</body>
+    <!-- Activar sonido al detectar el marcador -->
+    <script>
+      const marker = document.querySelector('#marker');
+      const sonido = document.querySelector('#propeller');
+
+      marker.addEventListener('markerFound', () => {
+        sonido.components.sound.playSound();
+      });
+
+      marker.addEventListener('markerLost', () => {
+        sonido.components.sound.stopSound();
+      });
+    </script>
+  </body>
 </html>
