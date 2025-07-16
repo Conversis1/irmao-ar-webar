@@ -9,7 +9,10 @@
     <!-- HLS.js -->
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
-      body { margin: 0; overflow: hidden; }
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
       #start-button {
         position: absolute;
         top: 50%;
@@ -31,10 +34,17 @@
     <button id="start-button">Iniciar experiencia</button>
 
     <!-- Hidden Video Element -->
-    <video id="video" playsinline crossorigin="anonymous" webkit-playsinline muted style="display: none"></video>
+    <video
+      id="video"
+      playsinline
+      muted
+      crossorigin="anonymous"
+      webkit-playsinline
+      style="display: none"
+    ></video>
 
     <!-- Plane Sound -->
-    <audio id="plane-sound" src="assets/plane-fx.mp3"></audio>
+    <audio id="plane-sound" src="assets/plane-fx.mp3" preload="auto"></audio>
 
     <!-- AR Scene -->
     <div id="container" style="width: 100vw; height: 100vh; display: none;">
@@ -56,7 +66,6 @@
           <!-- Streaming Video -->
           <a-video
             id="video-plane"
-            src="#video"
             width="1.5"
             height="0.9"
             position="0 0 0"
@@ -72,7 +81,7 @@
             rotation="0 0 0"
             visible="false"
           >
-            <!-- Rotating Animation (fake propeller) -->
+            <!-- Rotating Animation (propeller mimic) -->
             <a-animation
               attribute="rotation"
               to="0 360 0"
@@ -98,40 +107,58 @@
 
     <!-- Script Logic -->
     <script>
-      const startButton = document.getElementById('start-button');
-      const container = document.getElementById('container');
-      const video = document.getElementById('video');
-      const audio = document.getElementById('plane-sound');
-      const plane = document.getElementById('plane');
+      const startButton = document.getElementById("start-button");
+      const container = document.getElementById("container");
+      const video = document.getElementById("video");
+      const planeSound = document.getElementById("plane-sound");
+      const plane = document.getElementById("plane");
+      const videoPlane = document.querySelector("#video-plane");
 
-      startButton.addEventListener('click', () => {
-        startButton.style.display = 'none';
-        container.style.display = 'block';
+      let mindarStarted = false;
 
-        // Start HLS video
+      startButton.addEventListener("click", () => {
+        startButton.style.display = "none";
+        container.style.display = "block";
+
+        // Load and play HLS video robustly
         if (Hls.isSupported()) {
           const hls = new Hls();
-          hls.loadSource('assets/irmaoStream.m3u8');
+          hls.loadSource("assets/irmaoStream.m3u8");
           hls.attachMedia(video);
+
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            video.play();
+            video
+              .play()
+              .catch((err) =>
+                console.warn("Video play prevented:", err)
+              );
           });
-        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-          video.src = 'assets/irmaoStream.m3u8';
-          video.addEventListener('loadedmetadata', () => {
-            video.play();
+        } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+          video.src = "assets/irmaoStream.m3u8";
+          video.addEventListener("loadedmetadata", () => {
+            video
+              .play()
+              .catch((err) =>
+                console.warn("Video play prevented:", err)
+              );
           });
+        } else {
+          console.error("HLS not supported on this browser");
         }
 
-        // Trigger plane when tag is found
-        const sceneEl = document.querySelector('a-scene');
-        sceneEl.addEventListener('targetFound', () => {
-          console.log('🎯 Target found!');
-          plane.setAttribute('visible', 'true');
-          plane.emit('startPlane');
-          audio.play();
+        // Wait for video to be ready to use as texture
+        video.addEventListener("canplay", () => {
+          console.log("Video can play, attaching as texture");
+          videoPlane.setAttribute("src", "#video");
         });
-      });
-    </script>
-  </body>
-</html>
+
+        // Start plane animation and sound on AR target found
+        const sceneEl = document.querySelector("a-scene");
+
+        sceneEl.addEventListener("targetFound", () => {
+          if (!mindarStarted) {
+            mindarStarted = true;
+            console.log("Target found! Starting plane animation and sound.");
+            plane.setAttribute("visible", "true");
+            plane.emit("startPlane");
+            planeSound.play().catch((e) =>
