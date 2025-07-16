@@ -2,9 +2,8 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>AR Móvil Funcional</title>
+    <title>IRMAO AR Experience</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <!-- CDNs actualizados -->
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
@@ -16,15 +15,12 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            font-family: Arial, sans-serif;
             background: #000;
         }
         #ar-container {
             position: fixed;
             width: 100%;
             height: 100%;
-            top: 0;
-            left: 0;
         }
         #status {
             position: fixed;
@@ -35,39 +31,6 @@
             padding: 10px 20px;
             border-radius: 20px;
             z-index: 1000;
-            font-size: 16px;
-        }
-        #error-panel {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.95);
-            color: #ff5555;
-            padding: 30px;
-            z-index: 1001;
-            box-sizing: border-box;
-            overflow-y: auto;
-        }
-        #error-panel h2 {
-            color: #ff3333;
-            margin-top: 0;
-        }
-        #error-panel ul {
-            padding-left: 20px;
-        }
-        #close-error {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: #ff3333;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
-            cursor: pointer;
         }
         #start-button {
             position: fixed;
@@ -79,134 +42,66 @@
             border: none;
             padding: 15px 30px;
             border-radius: 30px;
-            font-size: 18px;
             z-index: 1000;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div id="status">Preparando experiencia AR...</div>
-    <div id="error-panel">
-        <h2>Error al cargar AR</h2>
-        <div id="error-details"></div>
-        <button id="close-error">Cerrar</button>
-    </div>
-    
-    <button id="start-button" style="display:none;">Iniciar AR</button>
+    <div id="status">Esperando interacción...</div>
+    <button id="start-button">INICIAR EXPERIENCIA AR</button>
     
     <div id="ar-container">
         <a-scene 
-            mindar-image="imageTargetSrc: targets.mind; autoStart: false;" 
-            embedded 
+            mindar-image="imageTargetSrc: assets/targets.mind; autoStart: false;"
+            embedded
             renderer="colorManagement: true;"
-            loading-screen="enabled: false;"
         >
             <a-assets>
-                <!-- Precarga de assets -->
-                <img id="target-image" src="irmaoetiqueta1.jpg" crossorigin="anonymous">
-                <audio id="sonido-propeller" src="plane-fx.mp3" preload="auto"></audio>
+                <audio id="propeller-sound" src="assets/plane-fx.mp3" preload="auto"></audio>
             </a-assets>
 
             <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-            <!-- Contenido AR -->
             <a-entity mindar-image-target="targetIndex: 0">
-                <a-image 
-                    src="irmao-plane.png"
+                <a-image
+                    src="assets/irmao-plane.png"
                     position="0 0.5 0"
                     width="1.5"
                     height="0.7"
                     animation="property: position; to: 0 0.8 0.5; dur: 3000; loop: true; easing: linear"
                 ></a-image>
-                <a-sound src="#sonido-propeller" autoplay="false" loop="true"></a-sound>
+                <a-sound src="#propeller-sound" autoplay="false" loop="true"></a-sound>
             </a-entity>
         </a-scene>
     </div>
 
     <script>
-        // Elementos UI
-        const statusEl = document.getElementById('status');
-        const errorPanel = document.getElementById('error-panel');
-        const errorDetails = document.getElementById('error-details');
         const startButton = document.getElementById('start-button');
-        const closeErrorBtn = document.getElementById('close-error');
+        const statusEl = document.getElementById('status');
         const scene = document.querySelector('a-scene');
-        
-        // Manejo de errores mejorado
-        scene.addEventListener('error', (e) => {
-            let errorMessage = 'Error desconocido';
-            let errorDetails = 'No hay información adicional';
-            
-            if (e.detail) {
-                errorMessage = e.detail.message || 'Error sin mensaje';
-                errorDetails = `
-                    <p><strong>Tipo:</strong> ${e.detail.error || 'Desconocido'}</p>
-                    <p><strong>Detalles técnicos:</strong></p>
-                    <pre>${JSON.stringify(e.detail, null, 2)}</pre>
-                `;
-            }
-            
-            statusEl.textContent = 'Error en AR';
-            errorDetails.innerHTML = `
-                <p>${errorMessage}</p>
-                ${errorDetails}
-                <h3>Verifica:</h3>
-                <ul>
-                    <li>¿El archivo <strong>targets.mind</strong> existe en tu repositorio?</li>
-                    <li>¿Los permisos de cámara están activados?</li>
-                    <li>¿Tienes conexión a internet estable?</li>
-                </ul>
-                <p>Intenta recargar la página.</p>
-            `;
-            errorPanel.style.display = 'block';
-            
-            console.error('Error en MindAR:', e.detail || e);
-        });
 
-        // Cierre de panel de error
-        closeErrorBtn.addEventListener('click', () => {
-            errorPanel.style.display = 'none';
-        });
-
-        // Inicio manual de AR (para evitar problemas de autoplay)
+        // Controlador de inicio manual
         startButton.addEventListener('click', () => {
-            statusEl.textContent = 'Iniciando cámara...';
+            statusEl.textContent = "Iniciando cámara...";
             startButton.style.display = 'none';
             
-            try {
-                scene.system.start();
-                document.querySelector('#sonido-propeller').components.sound.playSound();
-                statusEl.textContent = 'Listo - Apunta a tu imagen target';
-            } catch (err) {
-                errorDetails.innerHTML = `Error al iniciar: ${err.message}`;
-                errorPanel.style.display = 'block';
+            scene.system.start().then(() => {
+                statusEl.textContent = "Apunta a tu etiqueta IRMAO";
+                document.querySelector('#propeller-sound').components.sound.playSound();
+            }).catch(err => {
+                statusEl.textContent = "Error: " + err.message;
                 startButton.style.display = 'block';
-            }
-        });
-
-        // Cuando la escena está lista
-        scene.addEventListener('loaded', () => {
-            statusEl.textContent = 'AR cargado - Toca para comenzar';
-            startButton.style.display = 'block';
-            
-            // Verificación de assets
-            const assets = scene.querySelectorAll('a-asset-item, img, audio');
-            assets.forEach(asset => {
-                if (!asset.hasAttribute('loaded')) {
-                    console.warn(`Asset no cargado: ${asset.id || asset.src}`);
-                }
+                console.error(err);
             });
         });
 
         // Detección de marcador
         scene.addEventListener('targetFound', () => {
-            statusEl.textContent = 'Marcador detectado!';
+            statusEl.textContent = "¡Marcador detectado!";
         });
 
         scene.addEventListener('targetLost', () => {
-            statusEl.textContent = 'Apunta al marcador';
+            statusEl.textContent = "Apunta a tu etiqueta IRMAO";
         });
     </script>
 </body>
