@@ -2,40 +2,110 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>AR Móvil - Reconocimiento de Imagen</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>AR Móvil Funcional</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <!-- CDNs actualizados -->
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image.prod.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/aframe@1.3.0/dist/aframe.min.js"></script>
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; }
-        #ar-container { width: 100%; height: 100vh; position: fixed; top: 0; left: 0; }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #ar-container {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 1000;
+        }
+        #error {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            color: red;
+            padding: 20px;
+            z-index: 1001;
+        }
     </style>
 </head>
 <body>
+    <div id="loading">Cargando experiencia AR...</div>
+    <div id="error"></div>
+    
     <div id="ar-container">
-        <a-scene mindar-image="imageTargetSrc: assets/targets.mind;" embedded>
+        <a-scene 
+            mindar-image="imageTargetSrc: https://conversis1.github.io/irmao-ar-webar/assets/targets.mind; autoStart: true;" 
+            embedded 
+            renderer="colorManagement: true;"
+            loading-screen="enabled: false;"
+        >
+            <a-assets>
+                <!-- Precarga de assets (opcional pero recomendado) -->
+                <a-asset-item id="avion-3d" src="assets/avion.glb"></a-asset-item>
+                <audio id="sonido-propeller" src="assets/sonido.mp3" preload="auto"></audio>
+            </a-assets>
+
             <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-            
-            <!-- Avión 3D que aparece al detectar la imagen -->
+
+            <!-- Contenido AR (aparece al detectar el marcador) -->
             <a-entity mindar-image-target="targetIndex: 0">
                 <a-entity 
-                    gltf-model="assets/avion.glb" 
-                    position="0 0 0.5" 
+                    gltf-model="#avion-3d"
+                    position="0 0.5 0"
                     scale="0.5 0.5 0.5"
-                    animation="property: position; to: 0 0.5 1; dur: 3000; loop: true; easing: linear">
+                    animation="property: position; to: 0 0.5 1; dur: 3000; loop: true; easing: linear"
+                >
+                    <!-- Efecto de partículas (estela) -->
+                    <a-entity 
+                        particle-system="preset: snow; particleCount: 100; color: #00FFFF; size: 0.1"
+                        position="0 0 -0.5"
+                    ></a-entity>
                 </a-entity>
-                <!-- Efecto de sonido -->
-                <a-sound src="assets/sonido-propeller.mp3" autoplay="true" loop="true"></a-sound>
+                <a-sound src="#sonido-propeller" autoplay="true" loop="true"></a-sound>
             </a-entity>
         </a-scene>
     </div>
 
     <script>
-        // Activar AR al cargar la página (opcional)
-        window.addEventListener('load', () => {
-            const scene = document.querySelector('a-scene');
-            if (scene.hasLoaded) scene.system.start();
+        // Manejo de errores y carga
+        document.querySelector('a-scene').addEventListener('loaded', () => {
+            document.getElementById('loading').style.display = 'none';
+        });
+
+        document.querySelector('a-scene').addEventListener('error', (e) => {
+            const errorEl = document.getElementById('error');
+            errorEl.style.display = 'block';
+            errorEl.innerHTML = `
+                <h2>Error al cargar AR</h2>
+                <p>${e.detail.message}</p>
+                <p>Verifica:</p>
+                <ul>
+                    <li>¿El archivo <strong>targets.mind</strong> existe en la carpeta assets?</li>
+                    <li>¿Los permisos de cámara están activados?</li>
+                </ul>
+                <p>Error técnico: ${e.detail.error}</p>
+            `;
         });
     </script>
 </body>
